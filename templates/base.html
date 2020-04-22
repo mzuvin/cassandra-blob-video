@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+	{% if title %}
+        <title>{{ title }} - CSDRVideo</title>
+    {% else %}
+        <title>Casssandra Video Yönetimi</title>
+    {% end %}
+	{% block head %}{% end %}
+</head>
+<body>
+	<div id="content">
+		{% block body %}{% end %}
+	</div>
+	{% block bottom %}{% end %}
+</body>
+</html>
