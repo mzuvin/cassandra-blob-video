@@ -28,17 +28,26 @@ class Parcala():
     def oku(self,boyut,index):
         bas=boyut.split('/')[0]
         son=boyut.split('/')[1]
-        encodings = all_encodings()
         #for enc in encodings:
         #try:
 
+
+        with open(self.dosyaYolu, "rb") as ff:
+            ff.seek(int(bas))
+            #content = ff.read()
+            lines=ff.read(int(son)).splitlines()
+            sondata=b''.join(lines)
+            data=cassandra.write(fileChunk,chunk_id=index,file_id=self.hash,content=bytes(sondata))
+            print(data.chunk_id)
+
+        """
         with codecs.open(self.dosyaYolu, 'r', 'ISO-8859-1' ) as ff:
             ff.seek(int(bas))
             #content = ff.read()
             lines=ff.read(int(son)).splitlines()
             data=cassandra.write(fileChunk,chunk_id=index,file_id=self.hash,content=bytes(lines[0], 'ISO-8859-1'))
             print(data.chunk_id)
-
+        """
         """
         with open(self.dosyaYolu,'r', encoding="utf-8") as f:
             # print the encoding and the first 500 characters
@@ -166,5 +175,8 @@ class UploadHandler(BaseHandler):
                          str(self.request.remote_ip),
                          str(fileinfo['filename']),
                          filename)
+
+            self.redirect("/video")
+            return
         except IOError as e:
             logging.error("Failed to write file due to IOError %s", str(e))
