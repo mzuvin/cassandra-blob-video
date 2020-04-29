@@ -1,6 +1,6 @@
 import tornado.ioloop
 import tornado.web
-from cassandra_model import Cassandra,userModel
+from cassandra_model import Cassandra,userModel,fileModel,fileChunk
 import os,json
 import json
 from uuid import UUID
@@ -53,6 +53,79 @@ class MainHandler(BaseHandler):
 			return
 		token = tornado.escape.xhtml_escape(self.current_user)
 		self.render("home.html",token=token,title="Home")
+
+class VideoHandler(BaseHandler):
+
+	"""
+	Videolarım listesi. Table olarak responsive
+	"""
+
+	def get(self):
+		if not self.current_user:
+			self.redirect("/user")
+			return
+		token = tornado.escape.xhtml_escape(self.current_user)
+		print(UUID(token))
+		q=fileModel.objects.allow_filtering()#
+		all_objects=list(q.filter(userid=UUID(token)))
+		#all_objects = list(fileModel.objects.filter(userid=token))#userid=UUID(token).hex)
+
+		self.render("video.html", title="Videolarım",all_objects=all_objects)
+
+class VideoCutMerge(BaseHandler):
+
+	"""
+	video izleme sayfası
+	"""
+
+	def get(self,slug):
+		if not self.current_user:
+			self.redirect("/user")
+			return
+		#print(slug)
+		#token = tornado.escape.xhtml_escape(self.current_user)
+
+		#q=fileChunk.objects.allow_filtering()#
+		#all_objects=list(q.filter(file_id=UUID(slug)))
+
+		#all_objects = list(fileModel.objects.filter(userid=token))#userid=UUID(token).hex)
+
+		self.render("play.html", title="Videolarım",all_objects=slug)
+
+class VideoMerge(BaseHandler):
+
+	"""
+	play.html sayfasındaki video src path /video/download/UUID
+
+	bytearray append yerine insert kullanıldı çünkü gelecek chunk_id nin sırası karışık olabilir.
+
+	fileModel gelen hash değerinden fileChunk birleştiriliyor.
+	
+	array to bytes join
+	data=b"".join(bytearr)
+	
+	"""
+
+	def get(self,slug):
+		#allow_filtering datanın hepsini çekiyor sonra filter işlemi yapıyoruz.
+		q=fileChunk.objects.allow_filtering()#
+		all_objects=q.filter(file_id=UUID(slug))
+		bytearr=[]
+		
+		for i in all_objects:
+			#print(i['chunk_id'])
+			#print(len(i['content']))
+			#print((i['content']))
+			#print("---------------TYPE--------------")
+			#print(type(i['content']))
+
+			bytearr.insert(int(i['chunk_id']),i['content'])
+		#array to bytes join
+		data=b"".join(bytearr)
+		#print("---------------len--------------")
+		#print(len(data))
+		self.set_header('Content-Type', 'video/mp4')
+		self.write(data)
 
 class UserHandler(BaseHandler):
 
@@ -109,11 +182,14 @@ def make_app():
 		(r"/", MainHandler),
 		(r"/user", UserHandler),
 		(r"/upload", UploadForm),
-        (r"/uploadHandler", uploadhandler.UploadHandler,
-             dict(upload_path="tmp/video/", naming_strategy=None))
+		(r"/uploadHandler", uploadhandler.UploadHandler,
+			 dict(upload_path="tmp/video/", naming_strategy=None)),
+		(r"/video",VideoHandler),
+		(r"/video/([^/]*)",VideoCutMerge),
+		(r"/video/download/([^/]*)",VideoMerge)
 	],**settings)
 
 if __name__ == "__main__":
-    app = make_app()
-    app.listen(8888)
-    tornado.ioloop.IOLoop.current().start()
+	app = make_app()
+	app.listen(8888)
+	tornado.ioloop.IOLoop.current().start()
