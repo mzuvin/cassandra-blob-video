@@ -56,7 +56,7 @@ class Cassandra:
         cloud_config = {
         'secure_connect_bundle': 'cassandra-config.zip'
         }
-        auth_provider = PlainTextAuthProvider(username='stream', password='1837837')
+        auth_provider = PlainTextAuthProvider(username='stream', password='1111111')
 
         self.cluster = Cluster(
             connect_timeout=10000,
