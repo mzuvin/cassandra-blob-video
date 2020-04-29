@@ -33,12 +33,12 @@ class fileModel(Model):
     id = columns.UUID(primary_key=True, default=uuid.uuid4)
     name = columns.Text(required=True)
     content_length = columns.BigInt(required=True)
-    userid = columns.UUID(required=True)
+    userid = columns.UUID(primary_key=True,required=True)
 
 class fileChunk(Model):
     __keyspace__ = 'streamkeyspace'
     __table_name__ = 'file_chunk'
-    chunk_id = columns.BigInt(required=True)
+    chunk_id = columns.BigInt(primary_key=True,required=True)
     file_id = columns.UUID(primary_key=True,required=True)
     content = columns.Blob(required=True)
 
@@ -59,11 +59,13 @@ class Cassandra:
         auth_provider = PlainTextAuthProvider(username='stream', password='1837837')
 
         self.cluster = Cluster(
+            connect_timeout=10000,
             cloud=cloud_config,
-            auth_provider=auth_provider,
+            auth_provider=auth_provider
             # executor_threads=int(os.getenv('CASSANDRA_EXECUTOR_THREADS')),
             # protocol_version=int(os.getenv('CASSANDRA_PROTOCOL_VERSION')),
         )
+        self.cluster.default_timeout=10000
 
         self.session = self.cluster.connect()
 
