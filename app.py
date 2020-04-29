@@ -14,11 +14,11 @@ class UUIDEncoder(json.JSONEncoder):
 	"""
 	JSON da UUİD hatasını çözmek için UUİD objesini stringe dönüştürüyoruz. JSON dumps edilebiliyor.
 	"""
-    def default(self, obj):
-        if isinstance(obj, UUID):
-            # Eğer obje uuid ise, uuid objesini str e çevir.
-            return obj.hex
-        return json.JSONEncoder.default(self, obj)
+	def default(self, obj):
+		if isinstance(obj, UUID):
+			# Eğer obje uuid ise, uuid objesini str e çevir.
+			return obj.hex
+		return json.JSONEncoder.default(self, obj)
 
 class BaseHandler(tornado.web.RequestHandler):
 	"""
@@ -26,8 +26,8 @@ class BaseHandler(tornado.web.RequestHandler):
 
 	get_current_user() session oturum yönetimi için bir getter.
 	"""
-    def get_current_user(self):
-        return self.get_secure_cookie("user")
+	def get_current_user(self):
+		return self.get_secure_cookie("user")
 
 class UploadForm(BaseHandler):
 	"""
@@ -35,12 +35,13 @@ class UploadForm(BaseHandler):
 	Dosya yüklemek için templates'i render ediyoruz.
 
 	"""
-    def get(self):
-        self.render("upload.html")
+	def get(self):
+		self.render("upload.html")
 
 class MainHandler(BaseHandler):
 
 	"""
+
 	Ana sayfa kullanıcı giriş yapmışsa token ve link gözüküyor.
 	Eğer kullanıcı giriş yapmadıysa token alması için kayıt sayfasına yönlendiriliyor.
 	
