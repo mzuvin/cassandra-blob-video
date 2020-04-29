@@ -1,0 +1,17 @@
+
+
+{% extends "base.html" %}
+
+{% block body %}
+
+<h2>Play</h2>
+{% if all_objects %}
+<video width="320" height="240" controls>
+  <source src="/video/download/{{ all_objects }}" type="video/mp4">
+</video>
+{% else %}
+    <p>Video Yok.</p>
+{% end %}
+
+{% end %}
+
