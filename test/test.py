@@ -2,8 +2,8 @@ import requests,os,uuid as u
 from uuid import UUID
 from cassandra_model import Cassandra,userModel,fileModel,fileChunk
 cassandra = Cassandra()
-
-
+import time
+from functools import partial
 def registerWeb(username,password,email):
 	url="http://127.0.0.1:8888/"
 	headers = {
@@ -40,94 +40,73 @@ class DosyaTesti:
 	def hash(self):
 		return str(u.uuid4())
 
-	def oku(self,boyut,index):
-		bas=boyut.split('/')[0]
-		son=boyut.split('/')[1]
-		#for enc in encodings:
-		#try:
 
+	def chunked(self,file, chunk_size):
+		return iter(lambda: file.read(chunk_size), '')
+
+	def oku2(self):
 		with open(self.dosyaYolu, "rb") as ff:
-			
-			"""
-			ff.seek(self.parcaboyut) # omit if you don't want to skip this chunk
-			chunk = ff.read(self.parcaboyut)
-			print("len"+str(len(chunk)))
-			data = cassandra.write(fileChunk,chunk_id=index,file_id=self.filehash,content=chunk)
-			print(len(data.content))
-			while data:
-				chunk = ff.read(self.parcaboyut)
-				data = cassandra.write(fileChunk,chunk_id=index,file_id=self.filehash,content=chunk)
-				print(len(data.content))
-			"""
-			#--------------------------------
-			
-			ff.seek(int(bas))
-			#content = ff.read()
-			lines=ff.read(int(son))#.splitlines()
-			#print(len(lines))
-			#sondata=b''.join(lines)
-			print("son data {}".format(len(lines)))
-			data=cassandra.write(fileChunk,chunk_id=index,file_id=self.filehash,content=bytes(lines))
-			print(data.chunk_id)
-			print("cass data {}".format(len(data.content)))
-			
+			index=0
+			for data in iter(partial(ff.read, self.parcaboyut), b''):
+				
+				print(index)
+				print("data uzunluğu {}".format(len(data)))
+				data=cassandra.write(fileChunk,chunk_id=index,file_id=self.filehash,content=bytes(data))
+				print(data.chunk_id)
+				print("cass data uzunluğu {}".format(len(data.content)))
+				index=index+1
+				
+				#for data in self.chunked(ff, 1*1024*1024):
+				
+				#print("son data {}".format(len(data)))
+				#data=cassandra.write(fileChunk,chunk_id=index,file_id=self.filehash,content=bytes(data))
+				#print(data.chunk_id)
+				#print("cass data {}".format(len(data.content)))
 
-	def isInt(self,x):
-		if x%1 == 0:
-			return False#tam bölünüyor
-		else:
-			return True
-
-	def boyutListHazirla(self,boyut,parca):
-		bol=float(boyut)/float(parca)
-		sayilar=[]
-		print ("toplam parca"+str(bol))
-		print ("toplam mb: "+str(boyut/1024*1024))
-		t=0
-		for i in range(0,int(bol)):
-			if i==0:
-				j=i
-			b=parca
-			t=b*(i+1)
-			s=str(j)+"/"+str(t)
-			#print s
-			sayilar.append(s)
-			j=t+1
-		if(self.isInt(bol)):
-			isi=str(t+1)+"/"+str(boyut)
-			sayilar.append(isi)
-
-		return sayilar
-
+	
 	def run(self,parcaboyut):
 		self.parcaboyut=parcaboyut
 		self.boyut = os.path.getsize(self.dosyaYolu)
-		boyutlist=self.boyutListHazirla(self.boyut,int(parcaboyut)*1024*1024)#50*1024*1024 50 mb lik parcalar.
-		print(boyutlist)
+		
 		data=cassandra.write(fileModel,id=self.filehash,name=filename,content_length=self.boyut,userid=self.usertoken)
 		print(data.id)
-		for i in range(0,len(boyutlist)):
-			self.oku(boyutlist[i],i)
+		self.oku2()
+		#for i in range(0,len(boyutlist)):
+		#	self.oku(boyutlist[i],i)
 
 	def checkFile(self):
 		q=fileChunk.objects.allow_filtering()#
-		all_objects=q.filter(file_id=UUID(str(self.filehash)))
+		all_objects=q.filter(file_id=UUID(str('8808708c-b75e-4997-b8c5-d645cb983b07')))
 		bytearr=[]
 		for i in all_objects:
+			print(len(i['content']))
 			bytearr.insert(int(i['chunk_id']),bytes(i['content']))
 		#array to bytes join
+		print(len(bytearr))
 		data=b"".join(bytearr)
 		cassandrafilebyte=len(data)
 		dosyabyte=self.boyut
-
+		"""
+		1017221
+		1048576
+		2065797
+		toplam parca2.9700984954833984
+		toplam mb: 3114374.0
+		['0/1048576', '1048577/2097152', '2097153/3114374']
+		8808708c-b75e-4997-b8c5-d645cb983b07
+		1017220
+		cass data 1048576
+		cass data 2065797
+		cass data 1017221
+		"""
 		print('Cassandra\'dan gelen datanın byte uzunluğu {}'.format(len(data)))
 		print('Yüklenen dosyanın byte uzunluğu {}'.format(self.boyut))
 		print('Dosyalar arasındaki fark {}'.format(dosyabyte-cassandrafilebyte))
 
 
-filename='video.mp4'
+filename='son.mp4'
 dt=DosyaTesti(filename,filename,'54cb638c6851423889f34fc55b13cf24')
-dt.run(1)
+dt.run(1*1024*1024)
 dt.checkFile()
 
 
