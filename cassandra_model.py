@@ -61,12 +61,14 @@ class Cassandra:
         self.cluster = Cluster(
             connect_timeout=10000,
             cloud=cloud_config,
-            auth_provider=auth_provider
+            auth_provider=auth_provider,
+            control_connection_timeout=None
             # executor_threads=int(os.getenv('CASSANDRA_EXECUTOR_THREADS')),
             # protocol_version=int(os.getenv('CASSANDRA_PROTOCOL_VERSION')),
         )
         self.cluster.default_timeout=10000
-
+        self.cluster.control_connection_timeout=None
+        self.cluster.connect_timeout=10000
         self.session = self.cluster.connect()
 
         register_connection(str(self.session), session=self.session)
